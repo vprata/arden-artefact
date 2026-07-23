@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}{{ collection.name }} – Custom Collectibles{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-1">{{ collection.name }}</h1>
+        <p class="text-muted mb-0">{{ collection.description or '' }}</p>
+        {% if collection.is_public %}
+            <span class="badge bg-success">Public</span>
+        {% else %}
+            <span class="badge bg-warning text-dark">Private</span>
+        {% endif %}
+    </div>
+    <div>
+        <a href="{{ url_for('items.new_item', collection_id=collection._id) }}" class="btn btn-primary">+ Add Item</a>
+        <a href="{{ url_for('collections.edit_collection', collection_id=collection._id) }}" class="btn btn-outline-secondary">Edit Collection</a>
+    </div>
+</div>
+
+{% if items %}
+<div class="row g-3">
+    {% for item in items %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm">
+            <a href="{{ url_for('public.item_detail', item_id=item._id) }}" class="text-decoration-none text-dark">
+                {% if item.images %}
+                <div class="card-img-top d-flex align-items-center justify-content-center bg-light" style="height:180px;">
+                    <img src="{{ url_for('static', filename='uploads/' + item.images[0]) }}"
+                         alt="{{ item.name }}"
+                         style="max-height:100%; max-width:100%; object-fit: contain;">
+                </div>
+                {% else %}
+                <div class="card-img-top bg-light d-flex align-items-center justify-content-center text-muted" style="height:180px;">
+                    No image
+                </div>
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ item.name }}</h5>
+                    {% if item.custom_fields %}
+                    <ul class="list-unstyled small mb-0">
+                        {% for f in item.custom_fields[:3] %}
+                        <li><strong>{{ f.field_name }}:</strong> {{ f.value }}</li>
+                        {% endfor %}
+                        {% if item.custom_fields|length > 3 %}
+                        <li class="text-muted">… +{{ item.custom_fields|length - 3 }} more</li>
+                        {% endif %}
+                    </ul>
+                    {% endif %}
+                </div>
+            </a>
+            <div class="card-footer bg-transparent">
+                <a href="{{ url_for('items.edit_item', item_id=item._id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+                <form method="POST" action="{{ url_for('items.delete_item', item_id=item._id) }}"
+                      class="d-inline" onsubmit="return confirm('Delete this item?');">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-info">No items yet. Click “Add Item” to create the first one with custom fields.</div>
+{% endif %}
+{% endblock %}

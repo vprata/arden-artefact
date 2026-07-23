@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Search – Custom Collectibles{% endblock %}
+{% block content %}
+<h1 class="mb-4">Search Results for “{{ query }}”</h1>
+
+{% if results.collections or results.items %}
+    {% if results.collections %}
+    <h4>Collections</h4>
+    <div class="list-group mb-4">
+        {% for col in results.collections %}
+        <a href="{{ url_for('public.gallery', collection_id=col._id) }}" class="list-group-item list-group-item-action">
+            {{ col.name }}
+        </a>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if results.items %}
+    <h4>Items</h4>
+    <div class="list-group">
+        {% for item in results.items %}
+        <a href="{{ url_for('public.item_detail', item_id=item._id) }}" class="list-group-item list-group-item-action">
+            <strong>{{ item.name }}</strong>
+            {% if item.custom_fields %}
+            <br><small class="text-muted">
+                {% for f in item.custom_fields[:4] %}
+                    {{ f.field_name }}: {{ f.value }}{% if not loop.last %} · {% endif %}
+                {% endfor %}
+            </small>
+            {% endif %}
+        </a>
+        {% endfor %}
+    </div>
+    {% endif %}
+{% else %}
+<div class="alert alert-secondary">No results found.</div>
+{% endif %}
+{% endblock %}

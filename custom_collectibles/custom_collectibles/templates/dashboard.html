@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Dashboard – Custom Collectibles{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>My Collections</h1>
+    <div>
+        <a href="{{ url_for('collections.new_category') }}" class="btn btn-outline-primary me-2">+ Category</a>
+        <a href="{{ url_for('collections.new_collection') }}" class="btn btn-primary">+ Collection</a>
+    </div>
+</div>
+
+{% if collections %}
+<div class="row g-3">
+    {% for col in collections %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">{{ col.name }}</h5>
+                <p class="card-text text-muted small">{{ col.description or 'No description' }}</p>
+                <p class="mb-1"><span class="badge bg-secondary">{{ col.category_name }}</span>
+                   {% if col.is_public %}<span class="badge bg-success">Public</span>{% else %}<span class="badge bg-warning text-dark">Private</span>{% endif %}
+                </p>
+                <p class="small text-muted">{{ col.item_count }} item{{ 's' if col.item_count != 1 else '' }}</p>
+            </div>
+            <div class="card-footer bg-transparent">
+                <a href="{{ url_for('collections.view_collection', collection_id=col._id) }}" class="btn btn-sm btn-outline-primary">Open</a>
+                <a href="{{ url_for('collections.edit_collection', collection_id=col._id) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-info">
+    You have no collections yet. Create a category and then a collection to get started.
+</div>
+{% endif %}
+{% endblock %}
