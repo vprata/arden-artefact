@@ -3,11 +3,11 @@
 {% block content %}
 <h1 class="mb-4">Search Results for “{{ query }}”</h1>
 
-{% if results.collections or results.items %}
-    {% if results.collections %}
+{% if results['collections'] or results['items'] %}
+    {% if results['collections'] %}
     <h4>Collections</h4>
     <div class="list-group mb-4">
-        {% for col in results.collections %}
+        {% for col in results['collections'] %}
         <a href="{{ url_for('public.gallery', collection_id=col._id) }}" class="list-group-item list-group-item-action">
             {{ col.name }}
         </a>
@@ -15,10 +15,10 @@
     </div>
     {% endif %}
 
-    {% if results.items %}
+    {% if results['items'] %}
     <h4>Items</h4>
     <div class="list-group">
-        {% for item in results.items %}
+        {% for item in results['items'] %}
         <a href="{{ url_for('public.item_detail', item_id=item._id) }}" class="list-group-item list-group-item-action">
             <strong>{{ item.name }}</strong>
             {% if item.custom_fields %}

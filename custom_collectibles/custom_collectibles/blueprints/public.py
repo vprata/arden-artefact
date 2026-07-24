@@ -77,26 +77,39 @@ def search():
     q = request.args.get('q', '').strip()
     results = {'collections': [], 'items': []}
 
-    if q:
+    if q and len(q) >= 1:
         db = current_app.db
-        # Use $regex (compatible with all recent PyMongo versions)
-        regex_query = {'$regex': q, '$options': 'i'}
+        try:
+            # Escape special regex characters
+            import re
+            safe_q = re.escape(q)
+            regex_query = {'$regex': safe_q, '$options': 'i'}
 
-        # Search public collections by name
-        results['collections'] = list(
-            db.collections.find({'is_public': True, 'name': regex_query}).limit(20)
-        )
+            # Search public collections by name
+            results['collections'] = list(
+                db.collections.find(
+                    {'is_public': True, 'name': regex_query}
+                ).limit(20)
+            )
 
-        # Search items that belong to public collections
-        public_ids = [c['_id'] for c in db.collections.find({'is_public': True}, {'_id': 1})]
-        results['items'] = list(
-            db.items.find({
-                'collection_id': {'$in': public_ids},
-                '$or': [
-                    {'name': regex_query},
-                    {'custom_fields.value': regex_query}
-                ]
-            }).limit(30)
-        )
+            # Get IDs of public collections
+            public_ids = [c['_id'] for c in db.collections.find(
+                {'is_public': True}, {'_id': 1}
+            )]
+
+            if public_ids:
+                results['items'] = list(
+                    db.items.find({
+                        'collection_id': {'$in': public_ids},
+                        '$or': [
+                            {'name': regex_query},
+                            {'custom_fields.value': regex_query}
+                        ]
+                    }).limit(30)
+                )
+        except Exception as e:
+            # Log the error but don't crash the page
+            current_app.logger.error(f"Search error: {e}")
+            results = {'collections': [], 'items': []}
 
     return render_template('public/search.html', query=q, results=results)
