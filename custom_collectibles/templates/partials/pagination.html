@@ -1,0 +1,52 @@
+{# Reusable pagination + sort + per-page controls #}
+{% if total is defined and total > 0 %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 my-4">
+
+  <!-- Sort + per-page form -->
+  <form method="GET" class="d-flex flex-wrap gap-2 align-items-center">
+    <label class="form-label mb-0 small text-muted">Sort by</label>
+    <select name="sort" class="form-select form-select-sm" style="width: auto;" onchange="this.form.submit()">
+      <option value="name_asc"  {% if sort == 'name_asc' %}selected{% endif %}>Name (A–Z)</option>
+      <option value="name_desc" {% if sort == 'name_desc' %}selected{% endif %}>Name (Z–A)</option>
+      <option value="newest"    {% if sort == 'newest' %}selected{% endif %}>Newest first</option>
+      <option value="oldest"    {% if sort == 'oldest' %}selected{% endif %}>Oldest first</option>
+    </select>
+
+    <label class="form-label mb-0 small text-muted ms-2">Show</label>
+    <select name="per_page" class="form-select form-select-sm" style="width: auto;" onchange="this.form.submit()">
+      {% for opt in per_page_options %}
+      <option value="{{ opt }}" {% if per_page == opt %}selected{% endif %}>{{ opt }}</option>
+      {% endfor %}
+    </select>
+    <span class="small text-muted">per page</span>
+  </form>
+
+  <!-- Page info -->
+  <div class="small text-muted">
+    Showing {{ ((page - 1) * per_page) + 1 }}–{{ [page * per_page, total]|min }} of {{ total }}
+  </div>
+
+  <!-- Pagination buttons -->
+  {% if total_pages > 1 %}
+  <nav>
+    <ul class="pagination pagination-sm mb-0">
+      <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+        <a class="page-link" href="?page={{ page - 1 }}&per_page={{ per_page }}&sort={{ sort }}">Previous</a>
+      </li>
+      {% for p in range(1, total_pages + 1) %}
+        {% if p == page or p <= 2 or p > total_pages - 2 or (p >= page - 1 and p <= page + 1) %}
+        <li class="page-item {% if p == page %}active{% endif %}">
+          <a class="page-link" href="?page={{ p }}&per_page={{ per_page }}&sort={{ sort }}">{{ p }}</a>
+        </li>
+        {% elif p == 3 or p == total_pages - 2 %}
+        <li class="page-item disabled"><span class="page-link">…</span></li>
+        {% endif %}
+      {% endfor %}
+      <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+        <a class="page-link" href="?page={{ page + 1 }}&per_page={{ per_page }}&sort={{ sort }}">Next</a>
+      </li>
+    </ul>
+  </nav>
+  {% endif %}
+</div>
+{% endif %}
