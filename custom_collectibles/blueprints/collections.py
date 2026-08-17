@@ -34,6 +34,25 @@ def _parse_pagination():
     return page, per_page
 
 
+# ------------------------------------------------------------------
+# Categories
+# ------------------------------------------------------------------
+
+@collections_bp.route('/categories')
+@login_required
+def list_categories():
+    """Dedicated page to view, edit and delete categories."""
+    db = current_app.db
+    categories = list(db.categories.find({'user_id': _get_user_id()}).sort('name', 1))
+    # Count how many collections use each category
+    for cat in categories:
+        cat['collection_count'] = db.collections.count_documents({
+            'category_id': cat['_id'],
+            'user_id': _get_user_id()
+        })
+    return render_template('collections/categories.html', categories=categories)
+
+
 @collections_bp.route('/category/new', methods=['GET', 'POST'])
 @login_required
 def new_category():
@@ -52,10 +71,69 @@ def new_category():
         }
         current_app.db.categories.insert_one(doc)
         flash('Category created successfully.', 'success')
-        return redirect(url_for('main.dashboard'))
+        return redirect(url_for('collections.list_categories'))
 
     return render_template('collections/category_form.html')
 
+
+@collections_bp.route('/category/<category_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_category(category_id):
+    db = current_app.db
+    category = db.categories.find_one({
+        '_id': ObjectId(category_id),
+        'user_id': _get_user_id()
+    })
+    if not category:
+        flash('Category not found or access denied.', 'danger')
+        return redirect(url_for('collections.list_categories'))
+
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        description = request.form.get('description', '').strip()
+        if not name:
+            flash('Category name is required.', 'danger')
+            return render_template('collections/category_form.html', category=category)
+
+        db.categories.update_one(
+            {'_id': ObjectId(category_id)},
+            {'$set': {'name': name, 'description': description}}
+        )
+        flash('Category updated successfully.', 'success')
+        return redirect(url_for('collections.list_categories'))
+
+    return render_template('collections/category_form.html', category=category)
+
+
+@collections_bp.route('/category/<category_id>/delete', methods=['POST'])
+@login_required
+def delete_category(category_id):
+    db = current_app.db
+    category = db.categories.find_one({
+        '_id': ObjectId(category_id),
+        'user_id': _get_user_id()
+    })
+    if not category:
+        flash('Category not found or access denied.', 'danger')
+        return redirect(url_for('collections.list_categories'))
+
+    # Unlink collections that used this category (do not delete the collections)
+    db.collections.update_many(
+        {'category_id': ObjectId(category_id), 'user_id': _get_user_id()},
+        {'$set': {'category_id': None}}
+    )
+    db.categories.delete_one({'_id': ObjectId(category_id)})
+    flash(
+        f'Category “{category["name"]}” deleted. '
+        'Any collections that used it are now uncategorised.',
+        'success'
+    )
+    return redirect(url_for('collections.list_categories'))
+
+
+# ------------------------------------------------------------------
+# Collections
+# ------------------------------------------------------------------
 
 @collections_bp.route('/new', methods=['GET', 'POST'])
 @login_required

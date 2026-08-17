@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}My Categories – Custom Collectibles{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-1">My Categories</h1>
+        <p class="text-muted mb-0">Organise your collections into categories</p>
+    </div>
+    <div>
+        <a href="{{ url_for('collections.new_category') }}" class="btn btn-primary">+ New Category</a>
+        <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary">Back to Dashboard</a>
+    </div>
+</div>
+
+{% if categories %}
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>Collections</th>
+                        <th style="width:160px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cat in categories %}
+                    <tr>
+                        <td><strong>{{ cat.name }}</strong></td>
+                        <td class="text-muted small">{{ cat.description or '—' }}</td>
+                        <td>
+                            <span class="badge bg-secondary">{{ cat.collection_count }}</span>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('collections.edit_category', category_id=cat._id) }}"
+                               class="btn btn-sm btn-outline-secondary">Edit</a>
+                            <form method="POST"
+                                  action="{{ url_for('collections.delete_category', category_id=cat._id) }}"
+                                  class="d-inline"
+                                  onsubmit="return confirm('Delete category “{{ cat.name }}”? Collections using it will become uncategorised.');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info">
+    You have no categories yet.
+    <a href="{{ url_for('collections.new_category') }}">Create your first category</a>.
+</div>
+{% endif %}
+{% endblock %}

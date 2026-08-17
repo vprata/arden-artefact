@@ -4,7 +4,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1>My Collections</h1>
     <div>
-        <a href="{{ url_for('collections.new_category') }}" class="btn btn-outline-primary me-2">+ Category</a>
+        <a href="{{ url_for('collections.list_categories') }}" class="btn btn-outline-primary me-2">Manage Categories</a>
         <a href="{{ url_for('collections.new_collection') }}" class="btn btn-primary">+ Collection</a>
     </div>
 </div>
@@ -56,7 +56,9 @@
 </div>
 {% else %}
 <div class="alert alert-info">
-    You have no collections yet. Create a category and then a collection to get started.
+    You have no collections yet.
+    <a href="{{ url_for('collections.list_categories') }}">Create a category</a>
+    and then a collection to get started.
 </div>
 {% endif %}
 

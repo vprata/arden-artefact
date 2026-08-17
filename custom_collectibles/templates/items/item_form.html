@@ -17,7 +17,9 @@
 
                     <div class="mb-3">
                         <label class="form-label">Image (optional)</label>
-                        <input type="file" name="image" class="form-control" accept="image/*">
+                        <input type="file" name="image" id="imageInput" class="form-control" accept="image/*">
+                        <div class="form-text">Maximum file size: 5 MB. Supported formats: PNG, JPG, JPEG, GIF, WEBP.</div>
+                        <div id="imageError" class="text-danger small mt-1" style="display:none;"></div>
                     </div>
 
                     <hr>
@@ -69,4 +71,35 @@
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/dynamic_fields.js') }}"></script>
+<script>
+(function () {
+    const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+    const input = document.getElementById('imageInput');
+    const errorEl = document.getElementById('imageError');
+    const form = document.getElementById('itemForm');
+
+    if (!input || !form) return;
+
+    function checkFile() {
+        errorEl.style.display = 'none';
+        errorEl.textContent = '';
+        if (!input.files || !input.files[0]) return true;
+        const file = input.files[0];
+        if (file.size > MAX_BYTES) {
+            const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+            errorEl.textContent = 'This file is ' + sizeMb + ' MB. Maximum allowed size is 5 MB. Please choose a smaller image.';
+            errorEl.style.display = 'block';
+            return false;
+        }
+        return true;
+    }
+
+    input.addEventListener('change', checkFile);
+    form.addEventListener('submit', function (e) {
+        if (!checkFile()) {
+            e.preventDefault();
+        }
+    });
+})();
+</script>
 {% endblock %}

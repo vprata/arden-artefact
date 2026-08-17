@@ -3,16 +3,15 @@ Custom Collectibles - Main Application Entry Point
 A web-based collection management system with dynamic custom fields.
 """
 
-from flask import Flask
+from flask import Flask, flash, redirect, request, url_for
 from flask_login import LoginManager
 from pymongo import MongoClient
 from bson.objectid import ObjectId
+from werkzeug.exceptions import RequestEntityTooLarge
 from config import Config
 import os
 
-# ------------------------------------------------------------------
-# App factory
-# ------------------------------------------------------------------
+
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
@@ -30,7 +29,7 @@ def create_app():
     login_manager.login_message_category = 'info'
     login_manager.init_app(app)
 
-    from blueprints.auth import User  # circular import safe here
+    from blueprints.auth import User
 
     @login_manager.user_loader
     def load_user(user_id):
@@ -38,6 +37,28 @@ def create_app():
         if user_data:
             return User(user_data)
         return None
+
+    # ------------------------------------------------------------------
+    # Friendly error handling for common situations
+    # ------------------------------------------------------------------
+    @app.errorhandler(RequestEntityTooLarge)
+    def handle_file_too_large(e):
+        """Show a clear message instead of a generic 413 page."""
+        max_mb = app.config.get('MAX_CONTENT_LENGTH', 5 * 1024 * 1024) // (1024 * 1024)
+        flash(
+            f'The file you tried to upload is too large. '
+            f'Maximum allowed size is {max_mb} MB. Please choose a smaller image.',
+            'danger'
+        )
+        # Try to send the user back to the form they came from
+        referrer = request.referrer
+        if referrer:
+            return redirect(referrer)
+        return redirect(url_for('main.dashboard'))
+
+    @app.errorhandler(413)
+    def handle_413(e):
+        return handle_file_too_large(e)
 
     # Register blueprints
     from blueprints.auth import auth_bp
