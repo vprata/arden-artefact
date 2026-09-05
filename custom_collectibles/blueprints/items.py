@@ -22,6 +22,17 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
 
+def _delete_image_files(filenames):
+    upload_dir = current_app.config['UPLOAD_FOLDER']
+    for name in filenames or []:
+        if not name:
+            continue
+        path = os.path.join(upload_dir, os.path.basename(str(name)))
+        try:
+            if os.path.isfile(path):
+                os.remove(path)
+        except OSError:
+            pass
 
 def parse_custom_fields(form):
     """
@@ -158,6 +169,7 @@ def edit_item(item_id):
                         img.save(filepath)
                 except Exception:
                     pass
+                _delete_image_files(item.get('images') or [])
                 update['images'] = [unique_name]  # replace existing image
 
         db.items.update_one({'_id': ObjectId(item_id)}, {'$set': update})
@@ -180,6 +192,7 @@ def delete_item(item_id):
         return redirect(url_for('main.dashboard'))
 
     collection_id = str(item['collection_id'])
+    _delete_image_files(item.get('images') or [])
     db.items.delete_one({'_id': ObjectId(item_id)})
     flash('Item deleted.', 'success')
     return redirect(url_for('collections.view_collection', collection_id=collection_id))

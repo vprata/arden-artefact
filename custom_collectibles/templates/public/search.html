@@ -3,11 +3,29 @@
 {% block content %}
 <h1 class="mb-4">Search Results for “{{ query }}”</h1>
 
-{% if results.collections or results.items %}
-    {% if results.collections %}
+{% if category_hits or collection_hits or item_hits %}
+    {% if category_hits %}
+    <h4>Categories</h4>
+    <div class="list-group mb-4">
+        {% for cat in category_hits %}
+        <div class="list-group-item">
+            <strong>{{ cat.name }}</strong>
+            {% if cat.public_collections %}
+            <div class="small mt-1">
+                {% for col in cat.public_collections %}
+                <a href="{{ url_for('public.gallery', collection_id=col._id) }}">{{ col.name }}</a>{% if not loop.last %} · {% endif %}
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if collection_hits %}
     <h4>Collections</h4>
     <div class="list-group mb-4">
-        {% for col in results.collections %}
+        {% for col in collection_hits %}
         <a href="{{ url_for('public.gallery', collection_id=col._id) }}" class="list-group-item list-group-item-action">
             {{ col.name }}
         </a>
@@ -15,10 +33,10 @@
     </div>
     {% endif %}
 
-    {% if results.items %}
+    {% if item_hits %}
     <h4>Items</h4>
     <div class="list-group">
-        {% for item in results.items %}
+        {% for item in item_hits %}
         <a href="{{ url_for('public.item_detail', item_id=item._id) }}" class="list-group-item list-group-item-action">
             <strong>{{ item.name }}</strong>
             {% if item.custom_fields %}

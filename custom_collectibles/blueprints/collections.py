@@ -9,6 +9,7 @@ from flask_login import login_required, current_user
 from bson.objectid import ObjectId
 from datetime import datetime
 import math
+import os
 
 collections_bp = Blueprint('collections', __name__, url_prefix='/collections')
 
@@ -254,13 +255,28 @@ def edit_collection(collection_id):
 @login_required
 def delete_collection(collection_id):
     db = current_app.db
-    result = db.collections.delete_one({
+    collection = db.collections.find_one({
         '_id': ObjectId(collection_id),
         'user_id': _get_user_id()
     })
-    if result.deleted_count:
-        db.items.delete_many({'collection_id': ObjectId(collection_id)})
-        flash('Collection and its items deleted.', 'success')
-    else:
+    if not collection:
         flash('Collection not found or access denied.', 'danger')
+        return redirect(url_for('main.dashboard'))
+
+    items = list(db.items.find({'collection_id': ObjectId(collection_id)}, {'images': 1}))
+    upload_dir = current_app.config['UPLOAD_FOLDER']
+    for item in items:
+        for name in (item.get('images') or []):
+            if not name:
+                continue
+            path = os.path.join(upload_dir, os.path.basename(str(name)))
+            try:
+                if os.path.isfile(path):
+                    os.remove(path)
+            except OSError:
+                pass
+
+    db.items.delete_many({'collection_id': ObjectId(collection_id)})
+    db.collections.delete_one({'_id': ObjectId(collection_id)})
+    flash('Collection, its items and uploaded images have been deleted.', 'success')
     return redirect(url_for('main.dashboard'))

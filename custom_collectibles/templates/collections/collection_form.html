@@ -36,10 +36,32 @@
                         </label>
                     </div>
                     <button type="submit" class="btn btn-primary">Save Collection</button>
+                    {% if collection %}
+                    <a href="{{ url_for('collections.view_collection', collection_id=collection._id) }}"
+                       class="btn btn-outline-secondary">Cancel</a>
+                    {% else %}
                     <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary">Cancel</a>
+                    {% endif %}
                 </form>
             </div>
         </div>
+
+        {% if collection %}
+        <div class="card shadow mt-4 border-danger">
+            <div class="card-body p-4">
+                <h5 class="text-danger">Delete collection</h5>
+                <p class="text-muted small mb-3">
+                    This will permanently delete <strong>{{ collection.name }}</strong>
+                    and all items and uploaded images inside it. This cannot be undone.
+                </p>
+                <form method="POST"
+                      action="{{ url_for('collections.delete_collection', collection_id=collection._id) }}"
+                      onsubmit="return confirm('Delete collection “{{ collection.name }}” and all of its items and images? This cannot be undone.');">
+                    <button type="submit" class="btn btn-danger">Delete Collection</button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

@@ -176,29 +176,62 @@ def item_detail(item_id):
 @public_bp.route('/search')
 def search():
     q = request.args.get('q', '').strip()
-    results = {'collections': [], 'items': []}
+    collection_hits = []
+    item_hits = []
+    category_hits = []
 
     if not q:
-        return render_template('public/search.html', query=q, results=results)
+        return render_template(
+            'public/search.html',
+            query=q,
+            collection_hits=collection_hits,
+            item_hits=item_hits,
+            category_hits=category_hits,
+        )
 
     db = current_app.db
 
     try:
-        results['collections'] = list(db.collections.find({
-            'is_public': True,
-            'name': {'$regex': q, '$options': 'i'}
-        }).limit(20))
+        regex = {'$regex': q, '$options': 'i'}
+
+        matching_categories = list(db.categories.find({'name': regex}, {'_id': 1, 'name': 1}))
+        matching_category_ids = [c['_id'] for c in matching_categories]
+
+        collection_query = {'is_public': True, 'name': regex}
+        if matching_category_ids:
+            collection_query = {
+                'is_public': True,
+                '$or': [
+                    {'name': regex},
+                    {'category_id': {'$in': matching_category_ids}}
+                ]
+            }
+        collection_hits = list(db.collections.find(collection_query).limit(30))
+
+        for cat in matching_categories:
+            public_in_cat = list(db.collections.find({
+                'is_public': True,
+                'category_id': cat['_id']
+            }, {'name': 1}).limit(10))
+            if public_in_cat:
+                cat['public_collections'] = public_in_cat
+                category_hits.append(cat)
 
         public_cols = list(db.collections.find({'is_public': True}, {'_id': 1}))
         public_ids = [c['_id'] for c in public_cols]
-
         if public_ids:
-            results['items'] = list(db.items.find({
+            item_hits = list(db.items.find({
                 'collection_id': {'$in': public_ids},
-                'name': {'$regex': q, '$options': 'i'}
+                'name': regex
             }).limit(30))
 
     except Exception as e:
         current_app.logger.error(f"Search error: {str(e)}")
 
-    return render_template('public/search.html', query=q, results=results)
+    return render_template(
+        'public/search.html',
+        query=q,
+        collection_hits=collection_hits,
+        item_hits=item_hits,
+        category_hits=category_hits,
+    )
