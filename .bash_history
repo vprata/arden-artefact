@@ -329,3 +329,35 @@ grep -n "def search" ~/custom_collectibles/blueprints/public.py
 sudo systemctl reset-failed collectibles
 sudo systemctl restart collectibles
 sudo systemctl status collectibles
+cd ~/custom_collectibles
+git status
+cd ~
+git status
+git diff
+cd ~
+git add -A
+git commit -m "Fix search | Add Category search & delete"
+git push
+cd ~
+git rm --cached .git-credentials
+echo ".git-credentials" >> .gitignore
+echo ".env" >> .gitignore
+git add .gitignore
+git filter-branch --force --index-filter   "git rm --cached --ignore-unmatch .git-credentials"   --prune-empty HEAD
+cd ~
+git add .gitignore
+git rm --cached .git-credentials
+cd ~
+git add .gitignore
+git add -A
+git status
+git commit -m "Update artefact and ignore credentials"
+git filter-branch --force --index-filter   "git rm --cached --ignore-unmatch .git-credentials"   --prune-empty HEAD
+git push
+mkdir -p ~/backups
+mongodump --out ~/backups/mongo_$(date +%Y%m%d)
+tar -czf ~/backups/uploads_$(date +%Y%m%d).tar.gz -C /home/collectibles uploads
+tar -czf ~/backups/app_$(date +%Y%m%d).tar.gz   --exclude='venv' --exclude='__pycache__'   -C /home/collectibles custom_collectibles
+ls -lh ~/backups
+cp ~/custom_collectibles/.env ~/backups/env_backup
+nano ~/custom_collectibles/blueprints/items.py

@@ -17,7 +17,8 @@
 
                     <div class="mb-3">
                         <label class="form-label">Image (optional)</label>
-                        <input type="file" name="image" id="imageInput" class="form-control" accept="image/*">
+                        <input type="file" name="image" id="imageInput" class="form-control"
+                               accept=".png,.jpg,.jpeg,.gif,.webp,image/png,image/jpeg,image/gif,image/webp">
                         <div class="form-text">Maximum file size: 5 MB. Supported formats: PNG, JPG, JPEG, GIF, WEBP.</div>
                         <div id="imageError" class="text-danger small mt-1" style="display:none;"></div>
                     </div>
@@ -38,16 +39,30 @@
                                            placeholder="Field name" value="{{ field.field_name }}" required>
                                 </div>
                                 <div class="col-md-3">
-                                    <select name="field_type_{{ loop.index0 }}" class="form-select">
+                                    <select name="field_type_{{ loop.index0 }}" class="form-select field-type-select">
                                         <option value="text" {% if field.field_type == 'text' %}selected{% endif %}>Text</option>
                                         <option value="number" {% if field.field_type == 'number' %}selected{% endif %}>Number</option>
                                         <option value="date" {% if field.field_type == 'date' %}selected{% endif %}>Date</option>
                                         <option value="boolean" {% if field.field_type == 'boolean' %}selected{% endif %}>Boolean</option>
                                     </select>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-4 field-value-wrap">
+                                    {% if field.field_type == 'number' %}
+                                    <input type="number" step="any" name="field_value_{{ loop.index0 }}" class="form-control"
+                                           placeholder="Number" value="{{ field.value }}" required>
+                                    {% elif field.field_type == 'date' %}
+                                    <input type="date" name="field_value_{{ loop.index0 }}" class="form-control"
+                                           value="{{ field.value }}" required>
+                                    {% elif field.field_type == 'boolean' %}
+                                    <select name="field_value_{{ loop.index0 }}" class="form-select" required>
+                                        <option value="">Select…</option>
+                                        <option value="true" {% if field.value == true or field.value == 'true' or field.value == 'True' %}selected{% endif %}>Yes</option>
+                                        <option value="false" {% if field.value == false or field.value == 'false' or field.value == 'False' %}selected{% endif %}>No</option>
+                                    </select>
+                                    {% else %}
                                     <input type="text" name="field_value_{{ loop.index0 }}" class="form-control"
                                            placeholder="Value" value="{{ field.value }}">
+                                    {% endif %}
                                 </div>
                                 <div class="col-md-1">
                                     <button type="button" class="btn btn-outline-danger btn-sm remove-field">×</button>
@@ -73,11 +88,10 @@
 <script src="{{ url_for('static', filename='js/dynamic_fields.js') }}"></script>
 <script>
 (function () {
-    const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+    const MAX_BYTES = 5 * 1024 * 1024;
     const input = document.getElementById('imageInput');
     const errorEl = document.getElementById('imageError');
     const form = document.getElementById('itemForm');
-
     if (!input || !form) return;
 
     function checkFile() {
@@ -85,9 +99,16 @@
         errorEl.textContent = '';
         if (!input.files || !input.files[0]) return true;
         const file = input.files[0];
+        const allowed = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
+        const ext = file.name.split('.').pop().toLowerCase();
+        if (!allowed.includes(ext)) {
+            errorEl.textContent = 'Images must be PNG, JPG, JPEG, GIF or WEBP.';
+            errorEl.style.display = 'block';
+            return false;
+        }
         if (file.size > MAX_BYTES) {
             const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
-            errorEl.textContent = 'This file is ' + sizeMb + ' MB. Maximum allowed size is 5 MB. Please choose a smaller image.';
+            errorEl.textContent = 'This file is ' + sizeMb + ' MB. Maximum allowed size is 5 MB.';
             errorEl.style.display = 'block';
             return false;
         }
@@ -96,9 +117,7 @@
 
     input.addEventListener('change', checkFile);
     form.addEventListener('submit', function (e) {
-        if (!checkFile()) {
-            e.preventDefault();
-        }
+        if (!checkFile()) e.preventDefault();
     });
 })();
 </script>

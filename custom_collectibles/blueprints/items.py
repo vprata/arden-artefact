@@ -22,6 +22,7 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
 
+
 def _delete_image_files(filenames):
     upload_dir = current_app.config['UPLOAD_FOLDER']
     for name in filenames or []:
@@ -34,34 +35,60 @@ def _delete_image_files(filenames):
         except OSError:
             pass
 
+
+def invalid_image_message(file):
+    if not file or not file.filename:
+        return None
+    if not allowed_file(file.filename):
+        return 'Images must be PNG, JPG, JPEG, GIF or WEBP.'
+    return None
+
+
 def parse_custom_fields(form):
-    """
-    Extract dynamic custom fields from the submitted form.
-    Expected form keys: field_name_0, field_type_0, field_value_0, ...
-    """
     custom_fields = []
+    errors = []
     i = 0
     while True:
         name_key = f'field_name_{i}'
-        type_key = f'field_type_{i}'
-        value_key = f'field_value_{i}'
-
         if name_key not in form:
             break
 
         field_name = form.get(name_key, '').strip()
-        field_type = form.get(type_key, 'text').strip()
-        field_value = form.get(value_key, '').strip()
+        field_type = form.get(f'field_type_{i}', 'text').strip()
+        field_value = form.get(f'field_value_{i}', '').strip()
 
-        if field_name:  # only keep fields that have a name
-            # Basic type coercion
+        if field_name:
             if field_type == 'number':
-                try:
-                    field_value = float(field_value) if '.' in field_value else int(field_value)
-                except ValueError:
-                    field_value = field_value  # keep as string if conversion fails
+                if field_value == '':
+                    errors.append(f'"{field_name}" must be a number.')
+                else:
+                    try:
+                        field_value = float(field_value) if '.' in field_value else int(field_value)
+                    except ValueError:
+                        errors.append(f'"{field_name}" must be a valid number.')
+            elif field_type == 'date':
+                if field_value == '':
+                    errors.append(f'"{field_name}" must be a date (YYYY-MM-DD).')
+                else:
+                    parsed = None
+                    for fmt in ('%Y-%m-%d', '%d/%m/%Y', '%d-%m-%Y'):
+                        try:
+                            parsed = datetime.strptime(field_value, fmt)
+                            break
+                        except ValueError:
+                            continue
+                    if parsed is None:
+                        errors.append(f'"{field_name}" must be a valid date (use YYYY-MM-DD).')
+                    else:
+                        field_value = parsed.strftime('%Y-%m-%d')
             elif field_type == 'boolean':
-                field_value = field_value.lower() in ('true', '1', 'yes', 'on')
+                lowered = field_value.lower()
+                if lowered in ('true', '1', 'yes', 'on'):
+                    field_value = True
+                elif lowered in ('false', '0', 'no', 'off'):
+                    field_value = False
+                else:
+                    errors.append(f'"{field_name}" must be Yes or No.')
 
             custom_fields.append({
                 'field_name': field_name,
@@ -69,7 +96,7 @@ def parse_custom_fields(form):
                 'value': field_value
             })
         i += 1
-    return custom_fields
+    return custom_fields, errors
 
 
 @items_bp.route('/new/<collection_id>', methods=['GET', 'POST'])
@@ -90,38 +117,40 @@ def new_item(collection_id):
             flash('Item name is required.', 'danger')
             return render_template('items/item_form.html', collection=collection)
 
-        custom_fields = parse_custom_fields(request.form)
+        custom_fields, field_errors = parse_custom_fields(request.form)
+        if field_errors:
+            for err in field_errors:
+                flash(err, 'danger')
+            return render_template('items/item_form.html', collection=collection)
 
-        # Handle image upload
         images = []
         if 'image' in request.files:
             file = request.files['image']
+            img_error = invalid_image_message(file)
+            if img_error:
+                flash(img_error, 'danger')
+                return render_template('items/item_form.html', collection=collection)
             if file and file.filename and allowed_file(file.filename):
                 filename = secure_filename(file.filename)
-                # Make unique
                 unique_name = f"{ObjectId()}_{filename}"
                 filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], unique_name)
                 file.save(filepath)
-
-                # Optional resize
                 try:
                     with Image.open(filepath) as img:
                         img.thumbnail((800, 800))
                         img.save(filepath)
                 except Exception:
-                    pass  # keep original if resize fails
-
+                    pass
                 images.append(unique_name)
 
-        item_doc = {
+        db.items.insert_one({
             'collection_id': ObjectId(collection_id),
             'user_id': _get_user_id(),
             'name': name,
             'custom_fields': custom_fields,
             'images': images,
             'created_at': datetime.utcnow()
-        }
-        db.items.insert_one(item_doc)
+        })
         flash('Item created successfully.', 'success')
         return redirect(url_for('collections.view_collection', collection_id=collection_id))
 
@@ -148,16 +177,23 @@ def edit_item(item_id):
             flash('Item name is required.', 'danger')
             return render_template('items/item_form.html', collection=collection, item=item)
 
-        custom_fields = parse_custom_fields(request.form)
+        custom_fields, field_errors = parse_custom_fields(request.form)
+        if field_errors:
+            for err in field_errors:
+                flash(err, 'danger')
+            return render_template('items/item_form.html', collection=collection, item=item)
 
         update = {
             'name': name,
             'custom_fields': custom_fields
         }
 
-        # Optional new image
         if 'image' in request.files:
             file = request.files['image']
+            img_error = invalid_image_message(file)
+            if img_error:
+                flash(img_error, 'danger')
+                return render_template('items/item_form.html', collection=collection, item=item)
             if file and file.filename and allowed_file(file.filename):
                 filename = secure_filename(file.filename)
                 unique_name = f"{ObjectId()}_{filename}"
@@ -170,7 +206,7 @@ def edit_item(item_id):
                 except Exception:
                     pass
                 _delete_image_files(item.get('images') or [])
-                update['images'] = [unique_name]  # replace existing image
+                update['images'] = [unique_name]
 
         db.items.update_one({'_id': ObjectId(item_id)}, {'$set': update})
         flash('Item updated.', 'success')
@@ -194,5 +230,5 @@ def delete_item(item_id):
     collection_id = str(item['collection_id'])
     _delete_image_files(item.get('images') or [])
     db.items.delete_one({'_id': ObjectId(item_id)})
-    flash('Item deleted.', 'success')
+    flash('Item and its images have been deleted.', 'success')
     return redirect(url_for('collections.view_collection', collection_id=collection_id))
