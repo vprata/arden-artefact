@@ -361,3 +361,21 @@ tar -czf ~/backups/app_$(date +%Y%m%d).tar.gz   --exclude='venv' --exclude='__py
 ls -lh ~/backups
 cp ~/custom_collectibles/.env ~/backups/env_backup
 nano ~/custom_collectibles/blueprints/items.py
+nano ~/custom_collectibles/static/js/dynamic_fields.js
+nano ~/custom_collectibles/templates/items/item_form.html
+sudo chown collectibles:collectibles ~/custom_collectibles/static/js/dynamic_fields.js
+sudo chmod 644 ~/custom_collectibles/static/js/dynamic_fields.js
+sudo systemctl restart collectibles
+git status
+nano .gitignore
+cd ~
+echo "backups/" >> .gitignore
+echo "backups/" >> custom_collectibles/.gitignore
+git status
+git add .gitignore custom_collectibles
+git add -A
+git status
+git commit -m "Add field type validation"
+git push
+python3 --version
+flask --version

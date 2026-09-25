@@ -1,3 +1,11 @@
 .git-credentials
 .env
 backups/
+uploads/
+**/uploads/
+custom_collectibles/static/uploads/
+custom_collectibles/**/uploads/
+backups/
+.git-credentials
+.env
+venv/

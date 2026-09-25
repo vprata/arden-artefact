@@ -1,0 +1,30 @@
+exit
+).pretty()  { name: 1, custom_fields: 1, images: 1 }  { collection_id: ObjectId("6a985fc462663100e0bf912a") },db.items.find(
+).pretty()  { name: 1, custom_fields: 1, images: 1 }  { collection_id: ObjectId("6a628f4dcdf4b81a75874a7e") },db.items.find(
+).pretty()  { name: 1, custom_fields: 1, images: 1 }  { collection_id: ObjectId("6a628f4dcdf4b81a75874a7e"") },db.items.find(
+).pretty()  { name: 1, custom_fields: 1, images: 1 }  { collection_id: ObjectId("6a628f4dcdf4b81a75874a7e"] } },db.items.find(
+)  { name: 1, is_public: 1 }  { name: { $in: ["Minimalist Hand-Drawn UK Flowers"] } },db.collections.find(
+)  { name: 1, is_public: 1 }  { name: { $in: ["Victorian"] } },db.collections.find(
+)  { name: 1, is_public: 1 }  { name: { $in: ["Victorian Gothic Novels"] } },db.collections.find(
+)  { name: 1, is_public: 1 }  { name: { $in: ["gothic"] } },db.collections.find(
+show collections
+use custom_collectibles
+show custom_collectibles
+help
+custom_collectibles
+show dbs
+db.c.find
+mongodb://localhost:27017/custom_collectibles use custom_collectibles show collections
+mongosh mongodb://localhost:27017/custom_collectiblesd-Drawn UK Flowers"] } },db.collections.find(
+)  { name: 1, is_public: 1 }  { name: { $in: ["Victorian"] } },db.collections.find(
+)  { name: 1, is_public: 1 }  { name: { $in: ["Victorian Gothic Novels"] } },db.collections.find(
+)  { name: 1, is_public: 1 }  { name: { $in: ["gothic"] } },db.collections.find(
+show collections
+use custom_collectibles
+show custom_collectibles
+help
+custom_collectibles
+show dbs
+db.c.find
+mongodb://localhost:27017/custom_collectibles use custom_collectibles show collections
+mongosh mongodb://localhost:27017/custom_collectibles
