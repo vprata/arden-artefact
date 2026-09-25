@@ -9,3 +9,4 @@ backups/
 .git-credentials
 .env
 venv/
+custom_collectibles_old/
